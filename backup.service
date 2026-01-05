@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly backup job
+
+[Service]
+Type=oneshot
+User=backup
+Group=backup
+SupplementaryGroups=backup-storage
+ExecStart=/usr/local/sbin/backup.sh
