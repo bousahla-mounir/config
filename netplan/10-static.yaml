@@ -1,0 +1,27 @@
+# file /etc/netplan/10-static.yaml
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    ens39:
+      dhcp4: no
+      addresses:
+        - 192.168.100.155/24
+        - 192.168.100.156/24
+        - 192.168.100.157/24
+      routes:
+        - to: default
+          via: 192.168.100.1
+      nameservers:
+        addresses:
+          - 192.168.100.1
+    ens37:
+      dhcp4: no
+      addresses:
+        - 192.168.100.97/24
+        - 192.168.100.98/24
+        - 192.168.100.99/24
+      nameservers:
+        addresses:
+          - 192.168.100.1
+#Changes to the configuration files take effect via sudo netplan apply
