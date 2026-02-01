@@ -1,0 +1,5 @@
+[Match]
+Name=ens38 ens*
+
+[Network]
+DHCP=yes
