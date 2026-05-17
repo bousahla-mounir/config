@@ -1,0 +1,6 @@
+/var/log/snapshot/backup-status.log {
+    monthly
+    rotate 12
+    compress
+    missingok
+}
