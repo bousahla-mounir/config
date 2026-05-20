@@ -1,0 +1,12 @@
+[Unit]
+### Create /etc/systemd/system/lvm-backup.timer
+Description=Run LVM Backup Daily
+
+[Timer]
+# Run every day at 2:00 AM
+OnCalendar=*-*-* 02:00:00
+# If the server was off at 2:00 AM, run it immediately when it starts
+Persistent=true
+
+[Install]
+WantedBy=timers.target

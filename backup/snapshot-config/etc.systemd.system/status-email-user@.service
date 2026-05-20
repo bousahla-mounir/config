@@ -1,0 +1,10 @@
+[Unit]
+### Create in: /etc/systemd/system/status-email-user@.service
+### Notice the @ in the filename. This tells Systemd this is a "Template Unit."
+Description=Alert Service for %i
+
+[Service]
+Type=oneshot
+# %i is the "instance" name (the name of the service that failed)
+ExecStart=/usr/local/bin/systemd-alert.sh %i
+User=root

@@ -1,0 +1,19 @@
+[Unit]
+### Create: /etc/systemd/system/lvm-backup.service
+### Note: %n passes the full name of the service (lvm-backup.service) to the template
+Description=LVM Snapshot and Backup
+# This is the magic line
+OnFailure=status-email-user@%n.service
+
+[Service]
+Type=oneshot
+# The '-' means "ignore error and continue" for the cleanup
+ExecStartPre=-/sbin/lvremove -f vg_system/snap-daily
+ExecStart=/usr/local/bin/snap-backup.sh
+# This runs ONLY if ExecStart exits with a 0 (success)
+ExecStartPost=/usr/local/bin/systemd-notify.sh SUCCESS %n
+# Ensure the snapshot is ALWAYS gone when finished, even if script crashed
+ExecStopPost=/sbin/lvremove -f vg_system/snap-daily
+
+[Install]
+WantedBy=multi-user.target
