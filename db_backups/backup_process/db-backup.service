@@ -1,0 +1,12 @@
+[Unit]
+#### sudo nano /etc/systemd/system/db-backup.service
+Description=Daily MariaDB Backup
+After=mariadb.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/db-backup.sh
+User=root
+# Senior Tip: Restrict resources so backup doesn't tank DB performance
+CPUWeight=50
+IOWeight=50
