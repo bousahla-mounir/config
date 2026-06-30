@@ -1,0 +1,14 @@
+## Create the file : sudo nano /etc/logrotate.d/my-backups
+
+/var/backups/backup.tar.gz {
+    daily
+    rotate 7
+    nocompress
+    missingok
+    notifempty
+    nocreate
+    postrotate
+        # Optional: Send a notification or sync to cloud after rotation
+        echo "Backup rotated at $(date)" >> /var/log/backup-history.log
+    endscript
+}
