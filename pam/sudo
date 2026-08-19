@@ -1,0 +1,16 @@
+#%PAM-1.0
+
+# Set up user limits from /etc/security/limits.conf.
+session    required   pam_limits.so
+
+session    required   pam_env.so readenv=1 user_readenv=0
+session    required   pam_env.so readenv=1 envfile=/etc/default/locale user_readenv=0
+
+@include common-auth
+
+account sufficient pam_succeed_if.so uid = 0
+account required pam_time.so
+@include common-account
+
+
+@include common-session-noninteractive
