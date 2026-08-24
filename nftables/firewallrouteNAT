@@ -1,0 +1,66 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define INTERNET_INTERFACE = enp1s0
+
+
+# NAT table (for Internet access from isolated network)
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+
+        # Masquerade all traffic from the isolated network going to Internet
+        oif $INTERNET_INTERFACE ip saddr 192.168.3.0/24 masquerade
+        oif $INTERNET_INTERFACE ip saddr 192.168.4.0/24 masquerade
+    }
+}
+
+# Filter table (firewall rules)
+table inet filter {
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        # Allow SSH (port 22) in both directions
+        iif "enp2s0" oif "enp3s0" tcp dport 22 ct state new,established,related accept
+        iif "enp3s0" oif "enp2s0" tcp dport 22 ct state new,established,related accept
+
+	# Allow HTTP (port 80) in both directions
+        iif "enp2s0" oif "enp3s0" tcp dport 80 ct state new,established,related accept
+        iif "enp3s0" oif "enp2s0" tcp dport 80 ct state new,established,related accept
+
+        # Allow established/related traffic for responses
+        iif "enp2s0" oif "enp3s0" ct state established,related accept
+        iif "enp3s0" oif "enp2s0" ct state established,related accept
+
+        # Allow ICMP ping in both directions
+        iif "enp2s0" oif "enp3s0" icmp type echo-request accept
+        iif "enp3s0" oif "enp2s0" icmp type echo-request accept
+        iif "enp2s0" oif "enp3s0" icmp type echo-reply accept
+        iif "enp3s0" oif "enp2s0" icmp type echo-reply accept
+
+        # Allow NAT at leaving and when it comes back        
+        iif "enp2s0" oif "enp1s0" ct state new,established,related accept
+        iif "enp1s0" oif "enp2s0" ct state new,established,related accept
+        iif "enp3s0" oif "enp1s0" ct state new,established,related accept
+        iif "enp1s0" oif "enp3s0" ct state new,established,related accept
+
+        log prefix "nftables FORWARD DROP: " counter drop
+    }
+
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iif lo accept
+        ct state established,related accept
+        iif "enp2s0" tcp dport 22 ct state new accept
+        iif "enp3s0" tcp dport 22 ct state new accept
+        tcp dport { 22, 80, 443} ct state new, established accept
+        icmp type echo-request accept
+        icmp type echo-reply accept
+        log prefix "nftables INPUT DROP: " counter drop
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}

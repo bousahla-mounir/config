@@ -1,0 +1,13 @@
+<network>
+  <name>packtiso</name>
+  <uuid>a9907530-6784-410b-8c12-9cb9670f3d04</uuid>
+  <bridge name='virbiso1' stp='on' delay='0'/>
+  <mac address='52:54:00:46:30:89'/>
+  <domain name="packtiso"/>
+  <ip address='192.168.3.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.3.2' end='192.168.3.254'/>
+    </dhcp>
+  </ip>
+</network>
+

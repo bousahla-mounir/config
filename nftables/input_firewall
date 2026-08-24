@@ -1,0 +1,37 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define SSH_CLIENTS = { 192.168.2.229, 192.168.2.233 }
+
+table inet filter {
+        chain input {
+                type filter hook input priority 0; policy drop;
+
+                # Allow established/related connections
+                ct state established,related accept
+
+                # Allow loopback
+                iif lo accept
+
+                # GHOST ICMP (Stealth)
+                icmp type { destination-unreachable, time-exceeded } accept
+                icmp type echo-request limit rate 2/second accept
+
+                # Web server ports
+                ip saddr $SSH_CLIENTS tcp dport { 80, 443 } ct state new, established accept
+                tcp dport { 80, 443 } drop
+
+                # SSH (for management) - restrict to specific IPs if possible
+                tcp dport 22 accept
+
+                # Log dropped packets
+                log prefix "nftables INPUT DROP: " counter drop
+        }
+        chain forward {
+                type filter hook forward priority filter;
+        }
+        chain output {
+                type filter hook output priority filter;
+        }
+}

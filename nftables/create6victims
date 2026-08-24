@@ -1,0 +1,61 @@
+#!/bin/bash
+# create-victims.sh
+
+TEMPLATE="ubuntu-cloud-base"  # Replace with your template name
+BASE_IMAGE="/var/lib/libvirt/images/${TEMPLATE}.qcow2"
+
+# Create 6 victim VMs
+for i in {1..6}; do
+    VM_NAME="victim-${i}"
+    
+    echo "Creating ${VM_NAME} ..."
+    
+    # Create COW disk
+    sudo qemu-img create -f qcow2 -F qcow2 -b ${BASE_IMAGE} \
+        /var/lib/libvirt/images/${VM_NAME}.qcow2 25G
+    
+    # Create cloud-init config with static IP
+    cat > /tmp/${VM_NAME}-user-data << EOF
+#cloud-config
+hostname: ${VM_NAME}
+manage_etc_hosts: true
+users:
+  - name: galo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCLjYpMpIoe6bBQo6fOeO+2LxYWpqUch6DkodXUTWTNe8fkewyARwG5ObshQqcksNq4J0lgSR+iWt+4J1i0PzsUp4sgMSBrN9euumNB6VlMYN82OSPLObSuE1+8o+a7x677cX8dbqqTFUpCVy0Sxn4dEbaO4NlKlEaEhALCzONSx7jF6hKcr4WmG/CoRyGO7Ewo/8OM+CdoQ5qm0mi4fc88ga+Tzfzo/vVAqgks50zC2sXr5opczlyOecrzDGGUHZZHhzPpk3w0hw7t8+2V3uhqins9oNjNpq/jucSZ3ESfnaAkrY5Y41GXo5CPVJfF0bBh5zBC43yBPiiOmbXPVXZD01q2KJuQQGAnHdx+bs4p5bQWJOQha8oKEICVEeTCjVcMoS3B0nBFvRjoNskmePAkoEyI+FSO5xfU/8NB8QxRZchNPoUP5GjaG9BjWKSpbQqp27a7oc+0fmfPGtBI0KZaXjE+CSFLAX0RpDfvhLn4M9TH4eDTdJbCaGxvS5FOjzc= bmounir@elite-hacker
+
+packages:
+  - nginx
+
+runcmd:
+  - systemctl enable nginx
+  - systemctl start nginx
+
+ssh_pwauth: true
+password: victim123
+chpasswd:
+  expire: False
+EOF
+    
+    touch /tmp/${VM_NAME}-meta-data
+    sudo cloud-localds /var/lib/libvirt/images/${VM_NAME}-cidata.iso \
+        /tmp/${VM_NAME}-user-data /tmp/${VM_NAME}-meta-data
+    
+    sudo virt-install \
+        --name ${VM_NAME} \
+        --memory 4096 \
+        --vcpus 2 \
+        --disk path=/var/lib/libvirt/images/${VM_NAME}.qcow2,format=qcow2 \
+        --disk path=/var/lib/libvirt/images/${VM_NAME}-cidata.iso,device=cdrom \
+        --os-variant ubuntu24.04 \
+        --network network=packtnet \
+        --import \
+        --noautoconsole \
+        --quiet
+
+    echo "${VM_NAME} created"
+done
+
+echo "All 6 victim VMs created!"
